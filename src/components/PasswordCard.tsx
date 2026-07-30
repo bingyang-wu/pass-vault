@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { openUrl } from '@tauri-apps/plugin-opener';
 import { PasswordEntry } from '../types';
 import { getEnvironmentByValue } from '../utils/crypto';
 
@@ -54,6 +55,18 @@ const PasswordCard: React.FC<PasswordCardProps> = ({
       .toUpperCase();
   };
 
+  const handleOpenUrl = async (e: React.MouseEvent, url: string) => {
+    e.stopPropagation();
+    if (!url) return;
+    // 确保URL有协议前缀
+    const fullUrl = url.match(/^https?:\/\//i) ? url : `https://${url}`;
+    try {
+      await openUrl(fullUrl);
+    } catch (err) {
+      console.error('打开链接失败:', err);
+    }
+  };
+
   return (
     <div className="password-card">
       <div className="card-header" onClick={() => setExpanded(!expanded)}>
@@ -64,7 +77,13 @@ const PasswordCard: React.FC<PasswordCardProps> = ({
         </div>
         <div className="card-info">
           <h3 className="card-title">{entry.websiteName}</h3>
-          <p className="card-url">{entry.url}</p>
+          <p
+            className={`card-url ${entry.url ? 'card-url-link' : ''}`}
+            onClick={entry.url ? (e) => handleOpenUrl(e, entry.url) : undefined}
+            title={entry.url ? `点击访问 ${entry.url}` : undefined}
+          >
+            {entry.url || '未设置网址'}
+          </p>
           <div className="card-meta">
             {envOption && (
               <span

@@ -474,6 +474,37 @@ body {
   border-color: var(--primary);
 }
 
+/* 拖拽排序样式 */
+.password-card.dragging {
+  opacity: 0.4;
+  transform: scale(0.98);
+}
+
+.password-card.drag-over {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  color: var(--text-tertiary);
+  padding: 4px;
+  border-radius: 4px;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.drag-handle:hover {
+  color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .card-header {
   display: flex;
   align-items: center;

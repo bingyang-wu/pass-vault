@@ -9,6 +9,13 @@ interface PasswordCardProps {
   onDelete: (id: string) => void;
   onCopyPassword: (password: string) => void;
   onCopyUsername: (username: string) => void;
+  draggable?: boolean;
+  isDragging?: boolean;
+  isDragOver?: boolean;
+  onDragStart?: (e: React.DragEvent) => void;
+  onDragOver?: (e: React.DragEvent) => void;
+  onDrop?: (e: React.DragEvent) => void;
+  onDragEnd?: (e: React.DragEvent) => void;
 }
 
 const PasswordCard: React.FC<PasswordCardProps> = ({
@@ -17,6 +24,13 @@ const PasswordCard: React.FC<PasswordCardProps> = ({
   onDelete,
   onCopyPassword,
   onCopyUsername,
+  draggable = false,
+  isDragging = false,
+  isDragOver = false,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [showPasswords, setShowPasswords] = useState<Record<string, boolean>>({});
@@ -68,8 +82,27 @@ const PasswordCard: React.FC<PasswordCardProps> = ({
   };
 
   return (
-    <div className="password-card">
+    <div
+      className={`password-card ${isDragging ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''}`}
+      draggable={draggable}
+      onDragStart={draggable ? onDragStart : undefined}
+      onDragOver={draggable ? onDragOver : undefined}
+      onDrop={draggable ? onDrop : undefined}
+      onDragEnd={draggable ? onDragEnd : undefined}
+    >
       <div className="card-header" onClick={() => setExpanded(!expanded)}>
+        {draggable && (
+          <div className="drag-handle" title="拖拽排序">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="9" cy="6" r="1"></circle>
+              <circle cx="9" cy="12" r="1"></circle>
+              <circle cx="9" cy="18" r="1"></circle>
+              <circle cx="15" cy="6" r="1"></circle>
+              <circle cx="15" cy="12" r="1"></circle>
+              <circle cx="15" cy="18" r="1"></circle>
+            </svg>
+          </div>
+        )}
         <div className="card-logo">
           <div className="logo-placeholder" style={{ backgroundColor: getRandomColor(entry.websiteName) }}>
             {getInitials(entry.websiteName)}

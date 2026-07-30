@@ -30,6 +30,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [showSettings, setShowSettings] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [copiedNotification, setCopiedNotification] = useState<string | null>(null);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   // 点击设置面板外部时关闭
@@ -134,6 +136,45 @@ const Dashboard: React.FC<DashboardProps> = ({
     setCopiedNotification(message);
     setTimeout(() => setCopiedNotification(null), 2000);
   }, []);
+
+  // 拖拽排序相关处理（仅在非搜索模式下启用）
+  const isDraggable = !searchQuery;
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', String(index));
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedIndex !== null && draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === index) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newEntries = [...entries];
+    const [draggedItem] = newEntries.splice(draggedIndex, 1);
+    newEntries.splice(index, 0, draggedItem);
+
+    onUpdateEntries(newEntries);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   return (
     <div className={`dashboard theme-${theme}`}>
@@ -275,7 +316,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         {/* 密码卡片列表 */}
         {filteredEntries.length > 0 ? (
           <div className="password-grid">
-            {filteredEntries.map((entry) => (
+            {filteredEntries.map((entry, index) => (
               <PasswordCard
                 key={entry.id}
                 entry={entry}
@@ -283,6 +324,13 @@ const Dashboard: React.FC<DashboardProps> = ({
                 onDelete={handleDeleteEntry}
                 onCopyPassword={() => showNotification('密码已复制到剪贴板')}
                 onCopyUsername={() => showNotification('用户名已复制到剪贴板')}
+                draggable={isDraggable}
+                isDragging={draggedIndex === index}
+                isDragOver={dragOverIndex === index}
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
               />
             ))}
           </div>

@@ -104,10 +104,14 @@ const Dashboard: React.FC<DashboardProps> = ({
     }));
 
     // 合并条目（基于网站名称和用户名的唯一性）
+    // 只与原始已有条目做去重，避免同一批导入的条目互相覆盖
+    const originalCount = entries.length;
     const mergedEntries = [...entries];
+    let addedCount = 0;
     newEntries.forEach((imported) => {
       const existingIndex = mergedEntries.findIndex(
-        (e) =>
+        (e, idx) =>
+          idx < originalCount &&
           e.websiteName === imported.websiteName &&
           JSON.stringify(e.accounts.map((a) => a.username)) ===
             JSON.stringify(imported.accounts.map((a) => a.username))
@@ -116,12 +120,13 @@ const Dashboard: React.FC<DashboardProps> = ({
         mergedEntries[existingIndex] = imported;
       } else {
         mergedEntries.push(imported);
+        addedCount++;
       }
     });
 
     onUpdateEntries(mergedEntries);
     setShowImportExport(false);
-    setCopiedNotification(`成功导入 ${importedEntries.length} 条记录`);
+    setCopiedNotification(`成功导入 ${importedEntries.length} 条记录（新增 ${addedCount} 条，更新 ${importedEntries.length - addedCount} 条）`);
     setTimeout(() => setCopiedNotification(null), 3000);
   };
 

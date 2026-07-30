@@ -1,4 +1,6 @@
 import React, { useState, useRef } from 'react';
+import { save } from '@tauri-apps/plugin-dialog';
+import { writeTextFile } from '@tauri-apps/plugin-fs';
 import { ExportData, PasswordEntry } from '../types';
 import { encryptWithKey, decryptWithKey } from '../utils/crypto';
 
@@ -20,7 +22,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!encryptionKey.trim()) {
       setError('请输入加密密钥');
       return;
@@ -32,6 +34,17 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
     }
 
     try {
+      // 弹出文件保存对话框，让用户选择保存路径
+      const filePath = await save({
+        defaultPath: `passvault-export-${Date.now()}.pvault`,
+        filters: [{ name: 'PassVault 导出文件', extensions: ['pvault'] }],
+      });
+
+      // 用户取消了选择
+      if (!filePath) {
+        return;
+      }
+
       const exportData: ExportData = {
         version: '1.0',
         entries: entries,
@@ -41,18 +54,10 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
       const jsonData = JSON.stringify(exportData, null, 2);
       const encrypted = encryptWithKey(jsonData, encryptionKey);
 
-      // 创建下载
-      const blob = new Blob([encrypted], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `passvault-export-${Date.now()}.pvault`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      // 写入文件到用户选择的路径
+      await writeTextFile(filePath, encrypted);
 
-      setSuccess('导出成功！文件已下载');
+      setSuccess('导出成功！文件已保存到指定位置');
       setError('');
     } catch (err) {
       setError('导出失败：' + (err as Error).message);

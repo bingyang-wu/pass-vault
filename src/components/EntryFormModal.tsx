@@ -124,6 +124,11 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({ entry, onSave, onClose 
       return;
     }
 
+    if (!url.trim()) {
+      alert('请输入网址');
+      return;
+    }
+
     const validAccounts = accounts.filter(
       (acc) => acc.username.trim() && acc.password.trim()
     );
@@ -174,12 +179,14 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({ entry, onSave, onClose 
                 <label>
                   <span className="label-icon">🔗</span>
                   网址
+                  <span className="required">*</span>
                 </label>
                 <input
-                  type="url"
+                  type="text"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://example.com"
+                  required
                 />
               </div>
 

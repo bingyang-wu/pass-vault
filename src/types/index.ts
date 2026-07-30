@@ -1,3 +1,6 @@
+// 条目类型
+export type EntryType = 'website' | 'database';
+
 // 账号信息
 export interface AccountInfo {
   id: string;
@@ -5,14 +8,27 @@ export interface AccountInfo {
   password: string;
 }
 
+// 数据库连接信息
+export interface DatabaseConnectionInfo {
+  dbType: string;       // MySQL, PostgreSQL, MongoDB, Redis, SQLServer 等
+  host: string;
+  port: string;
+  databaseName: string;
+  username: string;
+  password: string;
+  remark?: string;
+}
+
 // 密码条目
 export interface PasswordEntry {
   id: string;
-  websiteName: string;
-  url: string;
+  type: EntryType;      // 条目类型，默认 'website'
+  websiteName: string;   // 网站名称 / 数据库连接名称
+  url: string;           // 网址 / 可留空
   tags: string[];
-  environment: string; // 改为字符串，支持自定义环境
-  accounts: AccountInfo[];
+  environment: string;
+  accounts: AccountInfo[];          // 网站类型的账号列表
+  database?: DatabaseConnectionInfo; // 数据库类型的连接信息
   createdAt: number;
   updatedAt: number;
 }
@@ -45,6 +61,18 @@ export interface AppState {
   theme: ThemeType;
   lastActivityTime: number;
 }
+
+// 数据库类型选项
+export const DATABASE_TYPES = [
+  'MySQL',
+  'PostgreSQL',
+  'MongoDB',
+  'Redis',
+  'SQLServer',
+  'Oracle',
+  'SQLite',
+  'MariaDB',
+];
 
 // 导入导出数据格式
 export interface ExportData {

@@ -1,8 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { PasswordEntry, ThemeType } from '../types';
+import { PasswordEntry, ThemeType, EntryType } from '../types';
 import { generateId } from '../utils/crypto';
 import PasswordCard from './PasswordCard';
 import EntryFormModal from './EntryFormModal';
+import DatabaseFormModal from './DatabaseFormModal';
+import EntryTypeSelector from './EntryTypeSelector';
 import ImportExportModal from './ImportExportModal';
 import ChangePasswordModal from './ChangePasswordModal';
 
@@ -24,7 +26,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   onLock,
 }: DashboardProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [addType, setAddType] = useState<EntryType>('website');
   const [editingEntry, setEditingEntry] = useState<PasswordEntry | null>(null);
   const [showImportExport, setShowImportExport] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -94,13 +98,15 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const handleEditEntry = (entry: PasswordEntry) => {
     setEditingEntry(entry);
+    setAddType(entry.type || 'website');
     setShowAddModal(true);
   };
 
   const handleImport = (importedEntries: PasswordEntry[]) => {
-    // 为导入的条目生成新ID以避免冲突
+    // 为导入的条目生成新ID以避免冲突，并确保 type 字段存在
     const newEntries = importedEntries.map((entry) => ({
       ...entry,
+      type: entry.type || 'website' as const,
       id: generateId(),
       updatedAt: Date.now(),
     }));
@@ -364,9 +370,9 @@ const Dashboard: React.FC<DashboardProps> = ({
         className="fab-btn"
         onClick={() => {
           setEditingEntry(null);
-          setShowAddModal(true);
+          setShowTypeSelector(true);
         }}
-        title="添加密码"
+        title="添加"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -384,9 +390,32 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
       )}
 
+      {/* 类型选择弹框 */}
+      {showTypeSelector && (
+        <EntryTypeSelector
+          onSelect={(type) => {
+            setAddType(type);
+            setShowTypeSelector(false);
+            setShowAddModal(true);
+          }}
+          onClose={() => setShowTypeSelector(false)}
+        />
+      )}
+
       {/* 模态窗口 */}
-      {showAddModal && (
+      {showAddModal && addType === 'website' && (
         <EntryFormModal
+          entry={editingEntry}
+          onSave={handleSaveEntry}
+          onClose={() => {
+            setShowAddModal(false);
+            setEditingEntry(null);
+          }}
+        />
+      )}
+
+      {showAddModal && addType === 'database' && (
+        <DatabaseFormModal
           entry={editingEntry}
           onSave={handleSaveEntry}
           onClose={() => {

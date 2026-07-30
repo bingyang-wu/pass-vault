@@ -453,6 +453,100 @@ body {
   color: var(--text-tertiary);
 }
 
+/* ============= 类型选择弹框 ============= */
+.entry-type-selector {
+  background: var(--bg-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.type-selector-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.type-option {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.type-option:hover {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.type-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius);
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.website-icon {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+}
+
+.database-icon {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+}
+
+.type-info h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.type-info p {
+  font-size: 13px;
+  color: var(--text-tertiary);
+}
+
+/* 数据库类型徽章 */
+.db-type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  border-radius: 10px;
+}
+
+/* 数据库类型下拉框 */
+.db-type-select {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.db-type-select:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
+}
+
 /* ============= 密码卡片 ============= */
 .password-grid {
   display: grid;

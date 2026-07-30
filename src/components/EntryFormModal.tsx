@@ -137,6 +137,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({ entry, onSave, onClose 
     const now = Date.now();
     const savedEntry: PasswordEntry = {
       id: entry?.id || generateId(),
+      type: 'website',
       websiteName: websiteName.trim(),
       url: url.trim(),
       tags,

@@ -71,6 +71,17 @@ const Dashboard: React.FC<DashboardProps> = ({
     )
       return true;
 
+    // 搜索数据库连接信息
+    if (entry.database) {
+      const db = entry.database;
+      if (db.dbType.toLowerCase().includes(query)) return true;
+      if (db.host.toLowerCase().includes(query)) return true;
+      if (db.port.toLowerCase().includes(query)) return true;
+      if (db.databaseName.toLowerCase().includes(query)) return true;
+      if (db.username.toLowerCase().includes(query)) return true;
+      if (db.remark && db.remark.toLowerCase().includes(query)) return true;
+    }
+
     return false;
   });
 
@@ -205,7 +216,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索网站、URL、标签、账号..."
+            placeholder="搜索网站、URL、标签、账号、数据库..."
           />
           {searchQuery && (
             <button className="clear-search" onClick={() => setSearchQuery('')}>

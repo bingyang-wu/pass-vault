@@ -152,7 +152,7 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({ entry, onSave, onClose 
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay">
         <div className="entry-form-modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <h3>{entry ? '编辑密码' : '添加密码'}</h3>

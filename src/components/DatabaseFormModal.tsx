@@ -159,7 +159,7 @@ const DatabaseFormModal: React.FC<DatabaseFormModalProps> = ({ entry, onSave, on
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay">
         <div className="entry-form-modal" onClick={(e) => e.stopPropagation()}>
           <div className="modal-header">
             <h3>{entry ? '编辑数据库连接' : '添加数据库连接'}</h3>

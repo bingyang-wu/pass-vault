@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { PasswordEntry, ThemeType, EntryType } from '../types';
-import { generateId } from '../utils/crypto';
+import { generateId, getAllEnvironmentOptions } from '../utils/crypto';
 import PasswordCard from './PasswordCard';
 import EntryFormModal from './EntryFormModal';
 import DatabaseFormModal from './DatabaseFormModal';
@@ -63,8 +63,10 @@ const Dashboard: React.FC<DashboardProps> = ({
     if (entry.url.toLowerCase().includes(query)) return true;
     // 搜索标签
     if (entry.tags.some((tag) => tag.toLowerCase().includes(query))) return true;
-    // 搜索环境
+    // 搜索环境（同时匹配 value 和 label）
     if (entry.environment.toLowerCase().includes(query)) return true;
+    const envOption = getAllEnvironmentOptions().find((opt) => opt.value === entry.environment);
+    if (envOption && envOption.label.toLowerCase().includes(query)) return true;
     // 搜索账号用户名
     if (
       entry.accounts.some((acc) => acc.username.toLowerCase().includes(query))

@@ -1,0 +1,107 @@
+name: Build and Release
+
+# 当有代码推送到 main 分支时触发（包含直接推送和 PR 合并）
+on:
+  push:
+    branches:
+      - main
+  # 支持手动触发，方便调试
+  workflow_dispatch:
+
+# 创建 Release / Tag 需要写入权限
+permissions:
+  contents: write
+
+# 同一分支避免并发发布冲突
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Tauri app
+        run: npm run tauri:build
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./src-tauri/tauri.conf.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=v$VERSION" >> "$GITHUB_OUTPUT"
+          echo "检测到版本: $VERSION (tag: v$VERSION)"
+
+      - name: Locate build artifacts
+        id: artifacts
+        shell: bash
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # 按版本号匹配，避免 Rust 缓存中残留旧版本产物被误选
+          MSI=$(find src-tauri/target/release/bundle/msi -name "*${VERSION}*.msi" -type f | head -n 1)
+          EXE=$(find src-tauri/target/release/bundle/nsis -name "*${VERSION}*.exe" -type f | head -n 1)
+          if [ -z "$MSI" ] || [ -z "$EXE" ]; then
+            echo "未找到版本 $VERSION 的打包产物，MSI=$MSI EXE=$EXE"
+            exit 1
+          fi
+          echo "msi=$MSI" >> "$GITHUB_OUTPUT"
+          echo "exe=$EXE" >> "$GITHUB_OUTPUT"
+          echo "MSI: $MSI"
+          echo "EXE: $EXE"
+
+      # 如果同版本号的 Release 已存在，则先删除（连同 tag）以便覆盖
+      - name: Delete existing release (same version)
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+            echo "Release $TAG 已存在，删除后覆盖..."
+            gh release delete "$TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag
+            echo "已删除旧 Release 及 Tag。"
+          else
+            echo "Release $TAG 不存在，将创建新的 Release。"
+          fi
+
+      # 创建 Release 并上传 msi / exe 资源
+      - name: Create release and upload assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          MSI="${{ steps.artifacts.outputs.msi }}"
+          EXE="${{ steps.artifacts.outputs.exe }}"
+
+          gh release create "$TAG" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --notes "PassVault $VERSION 自动发布" \
+            "$MSI" "$EXE"
+
+          echo "发布完成: $TAG"

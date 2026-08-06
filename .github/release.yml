@@ -1,0 +1,25 @@
+# GitHub 自动生成 Release Notes 的分类配置
+# 当 CHANGELOG.md 中没有对应版本条目时，CI 会回退到 GitHub 自动生成
+# 自动生成基于合并到 main 的 PR 标签进行分类
+# 使用方式：给 PR 打上对应 label 即可自动归类
+
+changelog:
+  exclude:
+    labels:
+      - ignore-for-release
+      - dependencies
+  categories:
+    - title: 🚀 新特性
+      labels:
+        - enhancement
+        - feature
+    - title: 🐛 Bug 修复
+      labels:
+        - bug
+        - fix
+    - title: 📝 文档
+      labels:
+        - documentation
+    - title: 🔧 其他变更
+      labels:
+        - "*"

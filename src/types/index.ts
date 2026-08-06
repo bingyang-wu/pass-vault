@@ -78,6 +78,7 @@ export const DATABASE_TYPES = [
 export interface ExportData {
   version: string;
   entries: PasswordEntry[];
+  customEnvironments?: EnvironmentOption[];
   exportedAt: number;
 }
 

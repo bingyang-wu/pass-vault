@@ -58,7 +58,18 @@ const EntryFormModal: React.FC<EntryFormModalProps> = ({ entry, onSave, onClose 
 
   const handleAddEnvironment = () => {
     if (envInput.trim()) {
-      const newEnv = addCustomEnvironment(envInput.trim());
+      const inputLabel = envInput.trim();
+      // 检查是否已存在同名环境（不区分大小写）
+      const existing = envOptions.find(
+        (opt) => opt.label.toLowerCase() === inputLabel.toLowerCase()
+      );
+      if (existing) {
+        setEnvironment(existing.value);
+        setEnvInput('');
+        setShowEnvInput(false);
+        return;
+      }
+      const newEnv = addCustomEnvironment(inputLabel);
       setEnvOptions([...envOptions, newEnv]);
       setEnvironment(newEnv.value);
       setEnvInput('');

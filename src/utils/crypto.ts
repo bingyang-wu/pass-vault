@@ -233,3 +233,30 @@ export function getEnvironmentByValue(value: string): EnvironmentOption | undefi
   const allEnvs = getAllEnvironmentOptions();
   return allEnvs.find(env => env.value === value);
 }
+
+/**
+ * 获取自定义环境列表（原始数据，不含 isCustom 标记）
+ */
+export function getCustomEnvironments(): EnvironmentOption[] {
+  const customEnvsJson = localStorage.getItem(CUSTOM_ENVIRONMENTS_KEY);
+  if (!customEnvsJson) return [];
+  try {
+    return JSON.parse(customEnvsJson) as EnvironmentOption[];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * 合并导入的自定义环境（按 value 去重）
+ */
+export function mergeCustomEnvironments(importedEnvs: EnvironmentOption[]): void {
+  if (!importedEnvs || importedEnvs.length === 0) return;
+  const existing = getCustomEnvironments();
+  const existingValues = new Set(existing.map(env => env.value));
+  const toAdd = importedEnvs.filter(env => !existingValues.has(env.value));
+  if (toAdd.length > 0) {
+    const merged = [...existing, ...toAdd.map(env => ({ ...env, isCustom: true }))];
+    localStorage.setItem(CUSTOM_ENVIRONMENTS_KEY, JSON.stringify(merged));
+  }
+}

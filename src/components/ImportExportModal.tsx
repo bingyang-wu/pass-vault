@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { save } from '@tauri-apps/plugin-dialog';
 import { writeTextFile } from '@tauri-apps/plugin-fs';
-import { ExportData, PasswordEntry } from '../types';
-import { encryptWithKey, decryptWithKey } from '../utils/crypto';
+import { ExportData, PasswordEntry, EnvironmentOption } from '../types';
+import { encryptWithKey, decryptWithKey, getCustomEnvironments } from '../utils/crypto';
 
 interface ImportExportModalProps {
   entries: PasswordEntry[];
-  onImport: (entries: PasswordEntry[]) => void;
+  onImport: (entries: PasswordEntry[], customEnvironments?: EnvironmentOption[]) => void;
   onClose: () => void;
 }
 
@@ -48,6 +48,7 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
       const exportData: ExportData = {
         version: '1.0',
         entries: entries,
+        customEnvironments: getCustomEnvironments(),
         exportedAt: Date.now(),
       };
 
@@ -83,20 +84,33 @@ const ImportExportModal: React.FC<ImportExportModalProps> = ({
         throw new Error('无效的数据格式');
       }
 
-      // 验证导入的数据结构
+      // 验证导入的数据结构（支持网站和数据库两种类型）
       const validEntries = data.entries.filter(
         (entry) =>
           entry.id &&
           entry.websiteName &&
-          Array.isArray(entry.accounts)
+          (Array.isArray(entry.accounts) || entry.database)
       );
 
       if (validEntries.length === 0) {
         throw new Error('没有找到有效的密码条目');
       }
 
-      onImport(validEntries as PasswordEntry[]);
-      setSuccess(`成功导入 ${validEntries.length} 条记录`);
+      // 确保每个条目都有完整的字段
+      const normalizedEntries = validEntries.map((entry) => ({
+        ...entry,
+        type: entry.type || (entry.database ? 'database' : 'website'),
+        url: entry.url || '',
+        tags: Array.isArray(entry.tags) ? entry.tags : [],
+        environment: entry.environment || 'production',
+        accounts: Array.isArray(entry.accounts) ? entry.accounts : [],
+        database: entry.database || undefined,
+        createdAt: entry.createdAt || Date.now(),
+        updatedAt: entry.updatedAt || Date.now(),
+      })) as PasswordEntry[];
+
+      onImport(normalizedEntries, data.customEnvironments);
+      setSuccess(`成功导入 ${normalizedEntries.length} 条记录`);
       setError('');
     } catch (err) {
       setError('导入失败：' + (err as Error).message);

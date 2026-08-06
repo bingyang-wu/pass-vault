@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { PasswordEntry, ThemeType, EntryType } from '../types';
-import { generateId, getAllEnvironmentOptions } from '../utils/crypto';
+import { PasswordEntry, ThemeType, EntryType, EnvironmentOption } from '../types';
+import { generateId, getAllEnvironmentOptions, mergeCustomEnvironments } from '../utils/crypto';
 import PasswordCard from './PasswordCard';
 import EntryFormModal from './EntryFormModal';
 import DatabaseFormModal from './DatabaseFormModal';
@@ -15,6 +15,35 @@ interface DashboardProps {
   onThemeChange: (theme: ThemeType) => void;
   onChangePassword: (oldPassword: string, newPassword: string) => boolean;
   onLock: () => void;
+}
+
+/**
+ * 判断两个条目是否为同一条目（用于导入去重）
+ * 网站类型：比较账号用户名列表
+ * 数据库类型：比较数据库连接信息（主机+端口+数据库名+用户名）
+ */
+function isSameEntry(a: PasswordEntry, b: PasswordEntry): boolean {
+  const typeA = a.type || 'website';
+  const typeB = b.type || 'website';
+
+  if (typeA !== typeB) return false;
+
+  if (typeA === 'database') {
+    const dbA = a.database;
+    const dbB = b.database;
+    if (!dbA || !dbB) return false;
+    return (
+      dbA.host === dbB.host &&
+      dbA.port === dbB.port &&
+      dbA.databaseName === dbB.databaseName &&
+      dbA.username === dbB.username
+    );
+  }
+
+  // 网站类型：比较账号用户名列表
+  const usernamesA = a.accounts.map((acc) => acc.username).sort();
+  const usernamesB = b.accounts.map((acc) => acc.username).sort();
+  return JSON.stringify(usernamesA) === JSON.stringify(usernamesB);
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -115,30 +144,37 @@ const Dashboard: React.FC<DashboardProps> = ({
     setShowAddModal(true);
   };
 
-  const handleImport = (importedEntries: PasswordEntry[]) => {
+  const handleImport = (importedEntries: PasswordEntry[], customEnvironments?: EnvironmentOption[]) => {
+    // 合并导入的自定义环境
+    if (customEnvironments && customEnvironments.length > 0) {
+      mergeCustomEnvironments(customEnvironments);
+    }
+
     // 为导入的条目生成新ID以避免冲突，并确保 type 字段存在
     const newEntries = importedEntries.map((entry) => ({
       ...entry,
-      type: entry.type || 'website' as const,
+      type: entry.type || (entry.database ? 'database' : 'website') as EntryType,
       id: generateId(),
       updatedAt: Date.now(),
     }));
 
-    // 合并条目（基于网站名称和用户名的唯一性）
+    // 合并条目（基于网站名称和类型的唯一性）
     // 只与原始已有条目做去重，避免同一批导入的条目互相覆盖
     const originalCount = entries.length;
     const mergedEntries = [...entries];
     let addedCount = 0;
+    let updatedCount = 0;
     newEntries.forEach((imported) => {
       const existingIndex = mergedEntries.findIndex(
         (e, idx) =>
           idx < originalCount &&
           e.websiteName === imported.websiteName &&
-          JSON.stringify(e.accounts.map((a) => a.username)) ===
-            JSON.stringify(imported.accounts.map((a) => a.username))
+          (e.type || 'website') === (imported.type || 'website') &&
+          isSameEntry(e, imported)
       );
       if (existingIndex >= 0) {
         mergedEntries[existingIndex] = imported;
+        updatedCount++;
       } else {
         mergedEntries.push(imported);
         addedCount++;
@@ -147,7 +183,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
     onUpdateEntries(mergedEntries);
     setShowImportExport(false);
-    setCopiedNotification(`成功导入 ${importedEntries.length} 条记录（新增 ${addedCount} 条，更新 ${importedEntries.length - addedCount} 条）`);
+    setCopiedNotification(`成功导入 ${importedEntries.length} 条记录（新增 ${addedCount} 条，更新 ${updatedCount} 条）`);
     setTimeout(() => setCopiedNotification(null), 3000);
   };
 
